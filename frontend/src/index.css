@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kivo Design System - Financial Management App
+   Primary: Petrol Green - Trust & Stability
+   Clean, modern, mobile-first
+*/
+
+@layer base {
+  :root {
+    /* Core Colors - Petrol Green Theme */
+    --background: 180 10% 98%;
+    --foreground: 180 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 180 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 30% 15%;
+
+    /* Primary - Deep Petrol Green */
+    --primary: 175 60% 25%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light Gray */
+    --secondary: 180 8% 95%;
+    --secondary-foreground: 180 30% 20%;
+
+    /* Muted - Soft Gray */
+    --muted: 180 8% 92%;
+    --muted-foreground: 180 10% 45%;
+
+    /* Accent - Lighter Petrol */
+    --accent: 175 45% 92%;
+    --accent-foreground: 175 60% 22%;
+
+    /* Success - Fresh Green */
+    --success: 160 60% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 160 50% 94%;
+
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Destructive - Soft Red */
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 180 10% 88%;
+    --input: 180 10% 90%;
+    --ring: 175 60% 25%;
+
+    --radius: 0.75rem;
+
+    /* Custom Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(175 60% 25%) 0%, hsl(180 50% 30%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(180 10% 98%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(175 40% 95%) 0%, hsl(180 10% 98%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(180 30% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(180 30% 15% / 0.08), 0 2px 4px -2px hsl(180 30% 15% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(180 30% 15% / 0.1), 0 4px 6px -4px hsl(180 30% 15% / 0.05);
+    --shadow-card: 0 2px 8px -2px hsl(175 60% 25% / 0.08);
+    --shadow-button: 0 4px 14px -3px hsl(175 60% 25% / 0.25);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 180 30% 20%;
+    --sidebar-primary: 175 60% 25%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 175 45% 94%;
+    --sidebar-accent-foreground: 175 60% 22%;
+    --sidebar-border: 180 10% 88%;
+    --sidebar-ring: 175 60% 25%;
+  }
+
+  .dark {
+    --background: 180 20% 8%;
+    --foreground: 180 10% 95%;
+
+    --card: 180 20% 12%;
+    --card-foreground: 180 10% 95%;
+
+    --popover: 180 20% 12%;
+    --popover-foreground: 180 10% 95%;
+
+    --primary: 175 50% 45%;
+    --primary-foreground: 180 20% 8%;
+
+    --secondary: 180 15% 18%;
+    --secondary-foreground: 180 10% 90%;
+
+    --muted: 180 15% 20%;
+    --muted-foreground: 180 10% 60%;
+
+    --accent: 175 40% 20%;
+    --accent-foreground: 175 50% 80%;
+
+    --success: 160 55% 50%;
+    --success-foreground: 180 20% 8%;
+    --success-light: 160 40% 18%;
+
+    --warning: 38 85% 55%;
+    --warning-foreground: 180 20% 8%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 180 15% 22%;
+    --input: 180 15% 22%;
+    --ring: 175 50% 45%;
+
+    --sidebar-background: 180 20% 10%;
+    --sidebar-foreground: 180 10% 90%;
+    --sidebar-primary: 175 50% 45%;
+    --sidebar-primary-foreground: 180 20% 8%;
+    --sidebar-accent: 175 40% 18%;
+    --sidebar-accent-foreground: 175 50% 80%;
+    --sidebar-border: 180 15% 22%;
+    --sidebar-ring: 175 50% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-button {
+    box-shadow: var(--shadow-button);
+  }
+
+  /* Mobile-first touch feedback */
+  .touch-feedback {
+    @apply active:scale-[0.98] transition-transform duration-100;
+  }
+
+  /* Safe area for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

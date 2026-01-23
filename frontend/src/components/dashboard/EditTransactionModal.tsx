@@ -17,6 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { 
+  Transaction,
   TransactionCategory, 
   TransactionType, 
   categoryLabels, 
@@ -40,35 +41,24 @@ const transactionSchema = z.object({
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
 
-interface AddTransactionModalProps {
+interface EditTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  transaction: Transaction;
   accounts: Account[];
-  defaultAccountId?: string;
-  onAdd: (data: {
-    description: string;
-    amount: number;
-    type: TransactionType;
-    category: TransactionCategory;
-    accountId: string;
-    date: string;
-    isForeignCurrency: boolean;
-    originalAmount?: number;
-    originalCurrency?: Currency;
-    convertedAmount?: number;
-  }) => Promise<void>;
+  onUpdate: (id: string, data: Partial<Omit<Transaction, "id" | "createdAt">>) => Promise<void>;
 }
 
-export function AddTransactionModal({ 
+export function EditTransactionModal({ 
   isOpen, 
   onClose, 
+  transaction,
   accounts,
-  defaultAccountId,
-  onAdd 
-}: AddTransactionModalProps) {
+  onUpdate 
+}: EditTransactionModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedType, setSelectedType] = useState<TransactionType>("expense");
-  const [isForeignCurrency, setIsForeignCurrency] = useState(false);
+  const [selectedType, setSelectedType] = useState<TransactionType>(transaction.type);
+  const [isForeignCurrency, setIsForeignCurrency] = useState(transaction.isForeignCurrency);
 
   const {
     register,
@@ -80,17 +70,35 @@ export function AddTransactionModal({
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: "expense",
-      accountId: defaultAccountId || "",
-      isForeignCurrency: false,
+      description: transaction.description,
+      amount: transaction.isForeignCurrency 
+        ? transaction.originalAmount?.toString().replace(".", ",") 
+        : transaction.amount.toString().replace(".", ","),
+      type: transaction.type,
+      category: transaction.category,
+      accountId: transaction.accountId,
+      isForeignCurrency: transaction.isForeignCurrency,
+      originalCurrency: transaction.originalCurrency,
     },
   });
 
   useEffect(() => {
-    if (defaultAccountId) {
-      setValue("accountId", defaultAccountId);
+    if (isOpen) {
+      setSelectedType(transaction.type);
+      setIsForeignCurrency(transaction.isForeignCurrency);
+      reset({
+        description: transaction.description,
+        amount: transaction.isForeignCurrency 
+          ? transaction.originalAmount?.toString().replace(".", ",") 
+          : transaction.amount.toString().replace(".", ","),
+        type: transaction.type,
+        category: transaction.category,
+        accountId: transaction.accountId,
+        isForeignCurrency: transaction.isForeignCurrency,
+        originalCurrency: transaction.originalCurrency,
+      });
     }
-  }, [defaultAccountId, setValue]);
+  }, [isOpen, transaction, reset]);
 
   const onSubmit = async (data: TransactionFormData) => {
     setIsLoading(true);
@@ -102,33 +110,23 @@ export function AddTransactionModal({
                                   data.originalCurrency === "EUR" ? 5.35 : 
                                   data.originalCurrency === "GBP" ? 6.25 : 1;
       
-      await onAdd({
+      await onUpdate(transaction.id, {
         description: data.description,
         amount: data.isForeignCurrency ? amount * mockConversionRate : amount,
         type: data.type as TransactionType,
         category: data.category as TransactionCategory,
         accountId: data.accountId,
-        date: new Date().toISOString(),
         isForeignCurrency: data.isForeignCurrency,
         originalAmount: data.isForeignCurrency ? amount : undefined,
         originalCurrency: data.isForeignCurrency ? (data.originalCurrency as Currency) : undefined,
         convertedAmount: data.isForeignCurrency ? amount * mockConversionRate : undefined,
       });
-      reset();
-      setIsForeignCurrency(false);
       onClose();
     } catch (error) {
-      console.error("Error adding transaction:", error);
+      console.error("Error updating transaction:", error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    reset();
-    setIsForeignCurrency(false);
-    setSelectedType("expense");
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -147,9 +145,9 @@ export function AddTransactionModal({
       <div className="w-full max-w-lg rounded-t-3xl bg-card p-6 pb-safe-bottom animate-slide-in-bottom max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-foreground">Nova transação</h2>
+          <h2 className="text-xl font-bold text-foreground">Editar transação</h2>
           <button
-            onClick={handleClose}
+            onClick={onClose}
             className="rounded-full p-2 hover:bg-muted transition-colors"
           >
             <X className="h-5 w-5 text-muted-foreground" />
@@ -190,7 +188,7 @@ export function AddTransactionModal({
           <div className="space-y-2">
             <Label>Conta</Label>
             <Select 
-              defaultValue={defaultAccountId}
+              defaultValue={transaction.accountId}
               onValueChange={(value) => setValue("accountId", value)}
             >
               <SelectTrigger className={errors.accountId ? "border-destructive" : ""}>
@@ -216,12 +214,12 @@ export function AddTransactionModal({
           <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="foreign-currency" className="text-sm cursor-pointer">
+              <Label htmlFor="foreign-currency-edit" className="text-sm cursor-pointer">
                 Moeda estrangeira
               </Label>
             </div>
             <Switch
-              id="foreign-currency"
+              id="foreign-currency-edit"
               checked={isForeignCurrency}
               onCheckedChange={(checked) => {
                 setIsForeignCurrency(checked);
@@ -234,7 +232,10 @@ export function AddTransactionModal({
           {isForeignCurrency && (
             <div className="space-y-2 animate-fade-in">
               <Label>Moeda</Label>
-              <Select onValueChange={(value) => setValue("originalCurrency", value)}>
+              <Select 
+                defaultValue={transaction.originalCurrency}
+                onValueChange={(value) => setValue("originalCurrency", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a moeda" />
                 </SelectTrigger>
@@ -253,11 +254,11 @@ export function AddTransactionModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="amount">
+            <Label htmlFor="amount-edit">
               Valor {isForeignCurrency && watch("originalCurrency") ? `(${currencySymbols[watch("originalCurrency") as Currency] || ""})` : "(R$)"}
             </Label>
             <Input
-              id="amount"
+              id="amount-edit"
               type="text"
               inputMode="decimal"
               placeholder="0,00"
@@ -275,9 +276,9 @@ export function AddTransactionModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description-edit">Descrição</Label>
             <Input
-              id="description"
+              id="description-edit"
               type="text"
               placeholder="Ex: Supermercado"
               className={errors.description ? "border-destructive" : ""}
@@ -290,7 +291,10 @@ export function AddTransactionModal({
 
           <div className="space-y-2">
             <Label>Categoria</Label>
-            <Select onValueChange={(value) => setValue("category", value)}>
+            <Select 
+              defaultValue={transaction.category}
+              onValueChange={(value) => setValue("category", value)}
+            >
               <SelectTrigger className={errors.category ? "border-destructive" : ""}>
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
@@ -322,7 +326,7 @@ export function AddTransactionModal({
                 Salvando...
               </>
             ) : (
-              "Salvar transação"
+              "Salvar alterações"
             )}
           </Button>
         </form>

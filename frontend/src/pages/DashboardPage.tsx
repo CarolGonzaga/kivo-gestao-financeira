@@ -9,14 +9,36 @@ import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { BottomNav } from "@/components/dashboard/BottomNav";
 import { AddTransactionModal } from "@/components/dashboard/AddTransactionModal";
+import { EditTransactionModal } from "@/components/dashboard/EditTransactionModal";
+import { AddAccountModal } from "@/components/dashboard/AddAccountModal";
+import { AccountSelector } from "@/components/dashboard/AccountSelector";
+import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useFinance } from "@/hooks/useFinance";
 import { useToast } from "@/hooks/use-toast";
+import { Transaction } from "@/types/finance";
 
 export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const { user, logout } = useAuth();
-  const { transactions, summary, isLoading, addTransaction } = useFinance();
+  const { 
+    accounts,
+    selectedAccount,
+    selectedAccountId,
+    selectAccount,
+    transactions, 
+    summary, 
+    isLoading, 
+    addAccount,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useFinance();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -33,6 +55,35 @@ export default function DashboardPage() {
     });
   };
 
+  const handleUpdateTransaction = async (id: string, data: Parameters<typeof updateTransaction>[1]) => {
+    await updateTransaction(id, data);
+    setEditingTransaction(null);
+    toast({
+      title: "Transação atualizada!",
+      description: "Sua transação foi atualizada com sucesso.",
+    });
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!deletingTransaction) return;
+    setIsDeleting(true);
+    await deleteTransaction(deletingTransaction.id);
+    setDeletingTransaction(null);
+    setIsDeleting(false);
+    toast({
+      title: "Transação excluída!",
+      description: "Sua transação foi removida com sucesso.",
+    });
+  };
+
+  const handleAddAccount = async (data: Parameters<typeof addAccount>[0]) => {
+    await addAccount(data);
+    toast({
+      title: "Conta criada!",
+      description: "Sua nova conta foi adicionada com sucesso.",
+    });
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
@@ -41,6 +92,8 @@ export default function DashboardPage() {
   };
 
   const firstName = user?.name.split(" ")[0] || "Usuário";
+
+  const isAllAccountsSelected = selectedAccountId === null;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -70,9 +123,27 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {/* Account Selector */}
+        <div className="animate-fade-in-up">
+          <AccountSelector
+            accounts={accounts}
+            selectedAccount={selectedAccount}
+            isAllSelected={isAllAccountsSelected}
+            onSelectAccount={(account) => selectAccount(account.id)}
+            onSelectAll={() => selectAccount(null)}
+            onAddAccount={() => setIsAddAccountModalOpen(true)}
+          />
+        </div>
+
         {/* Balance Card */}
         <div className="animate-fade-in-up">
-          <BalanceCard balance={summary.totalBalance} isLoading={isLoading} />
+          <BalanceCard 
+            balance={isAllAccountsSelected 
+              ? accounts.reduce((sum, acc) => sum + acc.balance, 0)
+              : selectedAccount?.balance || 0
+            } 
+            isLoading={isLoading} 
+          />
         </div>
 
         {/* Daily Summary */}
@@ -127,6 +198,8 @@ export default function DashboardPage() {
           <TransactionList
             transactions={transactions.slice(0, 5)}
             isLoading={isLoading}
+            onEdit={setEditingTransaction}
+            onDelete={setDeletingTransaction}
           />
         </div>
       </main>
@@ -138,7 +211,37 @@ export default function DashboardPage() {
       <AddTransactionModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        accounts={accounts}
+        defaultAccountId={selectedAccountId || accounts[0]?.id}
         onAdd={handleAddTransaction}
+      />
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <EditTransactionModal
+          isOpen={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          transaction={editingTransaction}
+          accounts={accounts}
+          onUpdate={handleUpdateTransaction}
+        />
+      )}
+
+      {/* Add Account Modal */}
+      <AddAccountModal
+        isOpen={isAddAccountModalOpen}
+        onClose={() => setIsAddAccountModalOpen(false)}
+        onAdd={handleAddAccount}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={!!deletingTransaction}
+        onClose={() => setDeletingTransaction(null)}
+        onConfirm={handleDeleteTransaction}
+        isLoading={isDeleting}
+        title="Excluir transação"
+        description={`Tem certeza que deseja excluir a transação "${deletingTransaction?.description}"? Esta ação não pode ser desfeita.`}
       />
     </div>
   );

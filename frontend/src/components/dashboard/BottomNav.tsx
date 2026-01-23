@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { Home, BarChart3, Clock, User, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -4,9 +4,11 @@ import { TransactionItem } from "./TransactionItem";
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
+  onEdit?: (transaction: Transaction) => void;
+  onDelete?: (transaction: Transaction) => void;
 }
 
-export function TransactionList({ transactions, isLoading }: TransactionListProps) {
+export function TransactionList({ transactions, isLoading, onEdit, onDelete }: TransactionListProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -37,7 +39,12 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
   return (
     <div className="space-y-3">
       {transactions.map((transaction) => (
-        <TransactionItem key={transaction.id} transaction={transaction} />
+        <TransactionItem 
+          key={transaction.id} 
+          transaction={transaction}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );

@@ -1,20 +1,19 @@
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import {
-  PieChart,
-  TrendingUp,
-  Wallet,
+import { 
+  PieChart, 
+  TrendingUp, 
+  Wallet, 
   ArrowRight,
-  CheckCircle2,
+  CheckCircle2
 } from "lucide-react";
 
 const benefits = [
   {
     icon: PieChart,
     title: "Visão clara dos gastos",
-    description:
-      "Entenda para onde vai seu dinheiro com gráficos simples e intuitivos",
+    description: "Entenda para onde vai seu dinheiro com gráficos simples e intuitivos",
   },
   {
     icon: TrendingUp,
@@ -24,8 +23,7 @@ const benefits = [
   {
     icon: Wallet,
     title: "Controle total do saldo",
-    description:
-      "Saiba exatamente quanto você tem disponível a qualquer momento",
+    description: "Saiba exatamente quanto você tem disponível a qualquer momento",
   },
 ];
 
@@ -63,8 +61,8 @@ export default function LandingPage() {
               <span className="text-primary">claro e simples</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground md:text-xl animate-fade-in-up">
-              Transforme suas transações em informações que fazem sentido. Tome
-              decisões melhores sobre seu dinheiro.
+              Transforme suas transações em informações que fazem sentido. 
+              Tome decisões melhores sobre seu dinheiro.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center animate-fade-in-up">
               <Button variant="hero" size="xl" asChild>
@@ -106,7 +104,9 @@ export default function LandingPage() {
                 <h3 className="mb-2 text-lg font-semibold text-foreground">
                   {benefit.title}
                 </h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
+                <p className="text-muted-foreground">
+                  {benefit.description}
+                </p>
               </div>
             ))}
           </div>
@@ -143,8 +143,7 @@ export default function LandingPage() {
               Pronto para ter controle das suas finanças?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Comece gratuitamente e veja a diferença que a clareza financeira
-              pode fazer.
+              Comece gratuitamente e veja a diferença que a clareza financeira pode fazer.
             </p>
             <div className="mt-8">
               <Button variant="hero" size="xl" asChild>
@@ -164,7 +163,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <Logo size="sm" />
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Kivo. Todos os direitos reservados.
+              © 2024 Kivo. Todos os direitos reservados.
             </p>
           </div>
         </div>

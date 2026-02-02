@@ -14,7 +14,7 @@ public class ClienteSaldoMock {
     private final String RESOURCE = "/saldoInicial";
 
     public ClienteSaldoMock() {
-        String baseUrl = "https://6971044078fec16a63ffca46.mockapi.io/api/v1";
+        String baseUrl = "https://697aa3ae0e6ff62c3c59d0e6.mockapi.io/api/v1";
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .build();

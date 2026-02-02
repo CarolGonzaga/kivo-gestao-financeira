@@ -1,0 +1,169 @@
+package com.kivo.api.aplicacao.servico;
+
+import com.kivo.api.aplicacao.dto.UsuarioEntradaDTO;
+import com.kivo.api.dominio.modelo.Usuario;
+import com.kivo.api.dominio.repositorio.RepositorioUsuario;
+import com.kivo.api.infraestrutura.cliente.ClienteSaldoMock;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UsuarioServiceTest {
+
+    @Mock
+    private RepositorioUsuario repository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ClienteSaldoMock mockSaldoClient;
+
+    @InjectMocks
+    private ServicoUsuario service;
+
+    @Test
+    @DisplayName("Deve criar usuário com sucesso e gerar saldo aleatório")
+    void deveCriarUsuarioComSucesso() {
+        UsuarioEntradaDTO dados = new UsuarioEntradaDTO("Gabriel", "g@email.com", "123", "000");
+
+        when(repository.existsByEmail(any())).thenReturn(false);
+        when(repository.existsByCpf(any())).thenReturn(false);
+        when(passwordEncoder.encode(any())).thenReturn("HASH");
+        when(repository.save(any())).thenAnswer(i -> {
+            Usuario u = i.getArgument(0);
+            ReflectionTestUtils.setField(u, "id", UUID.randomUUID());
+            return u;
+        });
+
+        Usuario criado = service.cadastrar(dados);
+
+        assertNotNull(criado.getId());
+
+        verify(mockSaldoClient).criarConta(anyString(), any(BigDecimal.class));
+    }
+
+    @Test
+    @DisplayName("Deve falhar ao criar email duplicado")
+    void deveFalharEmailDuplicado() {
+        UsuarioEntradaDTO dados = new UsuarioEntradaDTO("Gabriel", "existente@email.com", "123", "000");
+        when(repository.existsByEmail(dados.email())).thenReturn(true);
+        assertThrows(RuntimeException.class, () -> service.cadastrar(dados));
+    }
+
+    @Test
+    @DisplayName("Deve buscar usuário por ID existente")
+    void deveBuscarPorId() {
+        UUID id = UUID.randomUUID();
+        Usuario usuarioMock = new Usuario("Gabriel", "g@email.com", "123", "000");
+
+        when(repository.findById(id)).thenReturn(Optional.of(usuarioMock));
+
+        Usuario encontrado = service.buscar(id);
+
+        assertEquals("Gabriel", encontrado.getNome());
+    }
+
+    @Test
+    @DisplayName("Deve lançar erro ao buscar ID inexistente")
+    void deveFalharBuscarIdInexistente() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> service.buscar(id));
+    }
+
+    @Test
+    @DisplayName("Deve listar todos os usuários")
+    void deveListarTodos() {
+        List<Usuario> lista = List.of(new Usuario(), new Usuario());
+        when(repository.findAll()).thenReturn(lista);
+
+        List<Usuario> resultado = service.listar();
+
+        assertEquals(2, resultado.size());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar usuário com sucesso")
+    void deveAtualizarUsuario() {
+        UUID id = UUID.randomUUID();
+        Usuario usuarioAntigo = new Usuario("Antigo", "antigo@email.com", "123", "000");
+        UsuarioEntradaDTO dadosNovos = new UsuarioEntradaDTO("Novo Nome", "novo@email.com", "999", "000");
+
+        when(repository.findById(id)).thenReturn(Optional.of(usuarioAntigo));
+        when(repository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+
+        Usuario atualizado = service.atualizarUsuario(id, dadosNovos);
+
+        assertEquals("Novo Nome", atualizado.getNome());
+        assertEquals("novo@email.com", atualizado.getEmail());
+    }
+
+    @Test
+    @DisplayName("Deve deletar usuário existente")
+    void deveDeletarUsuario() {
+        UUID id = UUID.randomUUID();
+        Usuario usuarioMock = new Usuario();
+
+        when(repository.findById(id)).thenReturn(Optional.of(usuarioMock));
+
+        service.remover(id);
+
+        verify(repository, times(1)).delete(usuarioMock);
+    }
+
+    @Test
+    @DisplayName("Deve importar usuários via Excel e gerar saldo")
+    void deveImportarExcel() throws Exception {
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+             var bos = new java.io.ByteArrayOutputStream()) {
+
+            var sheet = workbook.createSheet("Usuarios");
+            sheet.createRow(0).createCell(0).setCellValue("Nome"); // Header
+
+            var row = sheet.createRow(1);
+            row.createCell(0).setCellValue("User Excel");
+            row.createCell(1).setCellValue("excel@teste.com");
+            row.createCell(2).setCellValue("123");
+            row.createCell(3).setCellValue("999.999.999-99");
+
+            workbook.write(bos);
+
+            var arquivo = new org.springframework.mock.web.MockMultipartFile(
+                    "file", "teste.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bos.toByteArray()
+            );
+
+            when(repository.existsByEmail(any())).thenReturn(false);
+            when(repository.existsByCpf(any())).thenReturn(false);
+            when(passwordEncoder.encode(any())).thenReturn("HASH");
+
+            when(repository.save(any(Usuario.class))).thenAnswer(invocation -> {
+                Usuario u = invocation.getArgument(0);
+                ReflectionTestUtils.setField(u, "id", UUID.randomUUID());
+                return u;
+            });
+
+            service.importarUsuariosPorExcel(arquivo);
+
+            verify(repository, times(1)).save(any());
+
+            verify(mockSaldoClient, times(1)).criarConta(anyString(), any(BigDecimal.class));
+        }
+    }
+}

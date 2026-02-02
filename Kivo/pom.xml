@@ -12,7 +12,7 @@
 	<artifactId>kivo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>kivo</name>
-	<description>Desafio Beca Java - Gabriel Reis</description>
+	<description>Kivo - Gestor Financeiro</description>
 	<url/>
 	<licenses>
 		<license/>
